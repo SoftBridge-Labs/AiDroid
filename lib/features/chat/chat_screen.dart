@@ -1,9 +1,15 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/chat_provider.dart';
+import '../audio/audio_scribe_screen.dart';
+import '../game/ai_game_maker_screen.dart';
 import '../home/model_manager_screen.dart';
+import '../text/prompt_lab_screen.dart';
+import '../vision/ask_image_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -18,17 +24,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
-    ref.read(chatProvider.notifier).sendMessage(_controller.text.trim());
-    _controller.clear();
-    Future.delayed(const Duration(milliseconds: 80), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOut,
-        );
+    final success = ref.read(chatProvider.notifier).sendMessage(_controller.text.trim());
+    if (success) {
+      _controller.clear();
+      Future.delayed(const Duration(milliseconds: 80), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } else {
+      if (ref.read(chatProvider).activeModelStatus == ModelStatus.ready && ref.read(chatProvider.notifier).isSessionLoading) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model engine is loading, please wait a moment...')));
       }
-    });
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
+    }
   }
 
   @override
@@ -43,14 +62,75 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chatState = ref.watch(chatProvider);
     final messages = chatState.messages;
     final isReady = chatState.activeModelStatus == ModelStatus.ready;
-    final activeModel = availableModels.firstWhere((m) => m.id == chatState.activeModelId);
+    final activeModel = chatState.models.firstWhere((m) => m.id == chatState.activeModelId, orElse: () => chatState.models.first);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E14),
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF13131C),
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C63FF).withOpacity(0.1),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.android, size: 48, color: Color(0xFF6C63FF)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'AiDroid',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerSection('AI Features'),
+                  _buildDrawerItem(Icons.image_search, 'Vision / Ask Image', const Color(0xFF00C9FF), 
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AskImageScreen()))),
+                  _buildDrawerItem(Icons.science_outlined, 'Prompt Lab', const Color(0xFFFFB75E), 
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PromptLabScreen()))),
+                  _buildDrawerItem(Icons.mic_none_rounded, 'Audio Scribe', const Color(0xFFF093FB), 
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioScribeScreen()))),
+                  _buildDrawerItem(Icons.videogame_asset_outlined, 'AI Game Maker', const Color(0xFF43E97B), 
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiGameMakerScreen()))),
+                  
+                  const Divider(color: Colors.white12, height: 32),
+                  
+                  _buildDrawerSection('Community'),
+                  _buildDrawerItem(Icons.favorite, 'Sponsor Project', Colors.pinkAccent, 
+                    () => _launchUrl('https://github.com/sponsors/PrakharDoneria')),
+                  _buildDrawerItem(Icons.code_rounded, 'Contribute', Colors.greenAccent, 
+                    () => _launchUrl('https://github.com/SoftBridge-Labs/AiDroid')),
+                  _buildDrawerItem(Icons.info_outline, 'About', Colors.blueAccent, () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'AiDroid',
+                      applicationVersion: '1.0.0',
+                      applicationLegalese: '© SoftBridge Labs',
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0E0E14),
         elevation: 0,
-        titleSpacing: 20,
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -238,14 +318,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   height: 14,
                   child: _TypingDots(),
                 )
-              : Text(
-                  message.text,
-                  style: GoogleFonts.outfit(
-                    fontSize: 15,
-                    height: 1.45,
-                    color: message.isUser ? Colors.white : Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
+              : message.isUser
+                  ? Text(
+                      message.text,
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: Colors.white,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: message.text,
+                      styleSheet: MarkdownStyleSheet(
+                        p: GoogleFonts.outfit(fontSize: 15, height: 1.5, color: Colors.white.withValues(alpha: 0.9)),
+                        code: GoogleFonts.sourceCodePro(fontSize: 13, color: Colors.cyanAccent, backgroundColor: Colors.black45),
+                        codeblockDecoration: BoxDecoration(color: const Color(0xFF0E0E14), borderRadius: BorderRadius.circular(8)),
+                        h1: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                        h2: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        h3: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 15),
+                        strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
+                        listBullet: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
+                      ),
+                    ),
         ),
       ),
     );
@@ -413,6 +508,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ),
       ],
+    );
+  }
+  Widget _buildDrawerSection(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.outfit(
+          fontSize: 11,
+          color: Colors.white38,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, Color color, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: color.withOpacity(0.8), size: 22),
+      title: Text(
+        title,
+        style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
     );
   }
 }

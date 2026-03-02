@@ -43,6 +43,14 @@ dependencies:
   lottie: ^3.1.2
   dio: ^5.9.1
   llamadart: ^0.6.4
+  shared_preferences: ^2.5.4
+  url_launcher: ^6.3.2
+  speech_to_text: ^7.3.0
+  webview_flutter: ^4.13.1
+  flutter_markdown_plus: ^1.0.7
+  device_info_plus: ^12.3.0
+  background_downloader: ^9.5.4
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:

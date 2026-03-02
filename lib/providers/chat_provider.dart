@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:background_downloader/background_downloader.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:llamadart/llamadart.dart';
 
 enum ModelStatus { notDownloaded, downloading, ready, error }
@@ -21,13 +23,50 @@ class AiModel {
     required this.url,
     required this.fileName,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'url': url,
+    'fileName': fileName,
+  };
+
+  factory AiModel.fromJson(Map<String, dynamic> json) => AiModel(
+    id: json['id'],
+    name: json['name'],
+    description: json['description'],
+    url: json['url'],
+    fileName: json['fileName'],
+  );
 }
 
-const List<AiModel> availableModels = [
+const List<AiModel> defaultModels = [
+  AiModel(
+    id: 'gemma_2b_q2',
+    name: 'Gemma 2 2B IT (Q2_K)',
+    description: 'Geema. Google’s smart and lightweight model (~1.6GB). Excellent reasoning.',
+    url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q2_K.gguf',
+    fileName: 'gemma_2b_q2.gguf',
+  ),
+  AiModel(
+    id: 'llama_3_2_1b_q2',
+    name: 'Llama 3.2 1B Instruct (Q2_K)',
+    description: 'Extremely fast and optimized for instruction following (~0.6GB).',
+    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q2_K.gguf',
+    fileName: 'llama_3_s1b_q2.gguf',
+  ),
+  AiModel(
+    id: 'qwen_2_5_1_5b_q2',
+    name: 'Qwen 2.5 1.5B Instruct (Q2_K)',
+    description: 'Alibaba’s state-of-the-art multilingual lightweight model (~0.6GB).',
+    url: 'https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q2_K.gguf',
+    fileName: 'qwen_2_5_1_5b_q2.gguf',
+  ),
   AiModel(
     id: 'tinyllama_q2',
     name: 'TinyLlama 1.1B Chat (Q2_K)',
-    description: 'Lightweight and efficient. Best for low memory devices (~480MB).',
+    description: 'Fast and efficient. Best for low memory devices (~480MB).',
     url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf',
     fileName: 'tinyllama_q2.gguf',
   ),
@@ -49,6 +88,7 @@ const List<AiModel> availableModels = [
 
 class ChatState {
   final List<Message> messages;
+  final List<AiModel> models;
   final String activeModelId;
   final Map<String, ModelStatus> modelStatuses;
   final Map<String, double> downloadProgresses;
@@ -61,6 +101,7 @@ class ChatState {
 
   ChatState({
     required this.messages,
+    this.models = defaultModels,
     this.activeModelId = 'tinyllama_q2',
     this.modelStatuses = const {},
     this.downloadProgresses = const {},
@@ -75,6 +116,7 @@ class ChatState {
 
   ChatState copyWith({
     List<Message>? messages,
+    List<AiModel>? models,
     String? activeModelId,
     Map<String, ModelStatus>? modelStatuses,
     Map<String, double>? downloadProgresses,
@@ -85,6 +127,7 @@ class ChatState {
   }) {
     return ChatState(
       messages: messages ?? this.messages,
+      models: models ?? this.models,
       activeModelId: activeModelId ?? this.activeModelId,
       modelStatuses: modelStatuses ?? this.modelStatuses,
       downloadProgresses: downloadProgresses ?? this.downloadProgresses,
@@ -115,13 +158,15 @@ class Message {
 }
 
 class ChatNotifier extends Notifier<ChatState> {
-  final Dio _dio = Dio();
   late LlamaEngine _engine;
   ChatSession? _session;
   bool _isGenerating = false;
   bool _stopRequested = false;
   Timer? _cpuTimer;
   List<int>? _lastCpuTimes;
+  
+  bool get isGenerating => _isGenerating;
+  bool get isSessionLoading => _session == null && state.activeModelStatus == ModelStatus.ready;
 
   @override
   ChatState build() {
@@ -130,35 +175,96 @@ class ChatNotifier extends Notifier<ChatState> {
       _engine.dispose();
       _cpuTimer?.cancel();
     });
-    _checkModelsExist();
+    // Sync init the state
+    final initialModels = defaultModels;
     _startCpuMonitor();
+    
+    // Async load from disk
+    Future.microtask(() => _initData());
+    
     return ChatState(
       messages: [],
-      activeModelId: availableModels.first.id,
-      modelStatuses: {for (var m in availableModels) m.id: ModelStatus.notDownloaded},
-      downloadProgresses: {for (var m in availableModels) m.id: 0.0},
+      models: initialModels,
+      activeModelId: initialModels.first.id,
+      modelStatuses: {for (var m in initialModels) m.id: ModelStatus.notDownloaded},
+      downloadProgresses: {for (var m in initialModels) m.id: 0.0},
     );
   }
 
-  Future<void> _checkModelsExist() async {
+  Future<void> _initData() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<AiModel> loadedModels = List.from(defaultModels);
+    
+    final customModelsJson = prefs.getString('custom_models');
+    if (customModelsJson != null) {
+      try {
+        final List<dynamic> decoded = jsonDecode(customModelsJson);
+        for (var m in decoded) {
+          loadedModels.add(AiModel.fromJson(m));
+        }
+      } catch (e) {
+        // failed to parse customs
+      }
+    }
+
+    final savedActiveModelId = prefs.getString('active_model_id') ?? defaultModels.first.id;
+    final activeId = loadedModels.any((m) => m.id == savedActiveModelId) 
+        ? savedActiveModelId 
+        : defaultModels.first.id;
+
     final dir = await getApplicationDocumentsDirectory();
-    final Map<String, ModelStatus> statuses = Map.from(state.modelStatuses);
-    for (var model in availableModels) {
+    final statuses = Map<String, ModelStatus>.from(state.modelStatuses);
+    final progresses = Map<String, double>.from(state.downloadProgresses);
+
+    for (var model in loadedModels) {
       final file = File('${dir.path}/${model.fileName}');
       statuses[model.id] = await file.exists() ? ModelStatus.ready : ModelStatus.notDownloaded;
+      progresses[model.id] = 0.0;
     }
-    state = state.copyWith(modelStatuses: statuses);
-    if (statuses[state.activeModelId] == ModelStatus.ready) {
-      final activeModel = availableModels.firstWhere((m) => m.id == state.activeModelId);
-      await _initModel('${(await getApplicationDocumentsDirectory()).path}/${activeModel.fileName}', state.activeModelId);
+
+    state = state.copyWith(
+      models: loadedModels,
+      activeModelId: activeId,
+      modelStatuses: statuses,
+      downloadProgresses: progresses,
+    );
+
+    if (statuses[activeId] == ModelStatus.ready) {
+      final activeModel = loadedModels.firstWhere((m) => m.id == activeId);
+      await _initModel('${dir.path}/${activeModel.fileName}', activeId);
     }
+  }
+
+  Future<void> addCustomModel(String name, String description, String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    String newId = 'custom_${DateTime.now().millisecondsSinceEpoch}';
+    String fileName = '$newId.gguf';
+    final model = AiModel(
+      id: newId,
+      name: name,
+      description: description,
+      url: url,
+      fileName: fileName,
+    );
+    final newModels = [...state.models, model];
+    
+    final customModels = newModels.where((m) => !defaultModels.any((dm) => dm.id == m.id)).toList();
+    await prefs.setString('custom_models', jsonEncode(customModels.map((m) => m.toJson()).toList()));
+    
+    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[newId] = ModelStatus.notDownloaded;
+    final progresses = Map<String, double>.from(state.downloadProgresses)..[newId] = 0.0;
+    
+    state = state.copyWith(models: newModels, modelStatuses: statuses, downloadProgresses: progresses);
   }
 
   Future<void> setActiveModel(String modelId) async {
     if (state.activeModelId == modelId || _isGenerating) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('active_model_id', modelId);
+    
     state = state.copyWith(activeModelId: modelId, errorMessage: '', usageStats: '', liveStats: '');
     if (state.modelStatuses[modelId] == ModelStatus.ready) {
-      final model = availableModels.firstWhere((m) => m.id == modelId);
+      final model = state.models.firstWhere((m) => m.id == modelId);
       final dir = await getApplicationDocumentsDirectory();
       await _initModel('${dir.path}/${model.fileName}', modelId);
     } else {
@@ -170,29 +276,44 @@ class ChatNotifier extends Notifier<ChatState> {
     try {
       _engine.dispose();
       _engine = LlamaEngine(LlamaBackend());
-      await _engine.loadModel(path, modelParams: const ModelParams(gpuLayers: 0, preferredBackend: GpuBackend.cpu));
-      // Few-shot system prompt so TinyLlama actually follows the behaviour
-      // instead of explaining or demonstrating it.
-      _session = ChatSession(
-        _engine,
-        systemPrompt:
-            "<|system|>\n"
-            "A chat between a curious user and an AI assistant. "
-            "The assistant gives SHORT, direct answers. "
-            "Examples:\n"
-            "User: hi\nAssistant: Hey! How can I help you?\n"
-            "User: how are you?\nAssistant: Doing great, thanks! What's up?\n"
-            "User: what is 2+2?\nAssistant: 4.\n"
-            "User: explain gravity\nAssistant: Gravity is the force that attracts objects with mass toward each other. On Earth it pulls things downward at 9.8 m/s².\n"
-            "</s>",
+      
+      // Optimization: Fine-tune context and hardware usage
+      await _engine.loadModel(
+        path,
+        modelParams: ModelParams(
+          // Metal/Vulkan work great on Apple devices and desktops, but Vulkan on Android 
+          // often causes OOM or driver crashes when loading models. Default to CPU for Android.
+          gpuLayers: Platform.isAndroid ? 0 : 99, 
+          preferredBackend: Platform.isAndroid ? GpuBackend.cpu : GpuBackend.auto,
+          contextSize: 1024, // Smaller context for significantly faster prompt processing on mobile
+          batchSize: 512, // Standard batch size
+          numberOfThreads: Platform.numberOfProcessors > 4 ? 4 : Platform.numberOfProcessors, // Don't use all cores to avoid heat/throttling
+        ),
       );
+      
+      String sysPrompt = "You are a helpful AI assistant. Answer concisely and directly.";
+      if (modelId.contains('tinyllama')) {
+        sysPrompt = "You are a helpful AI assistant. Always respond concisely and directly.";
+      } else if (modelId.contains('deepseek')) {
+        sysPrompt = "You are an AI programming assistant. Provide concise technical answers.";
+      } else if (modelId.contains('phi')) {
+        sysPrompt = "You are an intelligent AI. Answer questions directly and warmly.";
+      } else if (modelId.contains('gemma')) {
+        sysPrompt = "You are Gemma, a smart AI assistant from Google. Answer concisely and clearly.";
+      } else if (modelId.contains('qwen')) {
+        sysPrompt = "You are Qwen, a helpful assistant. Reply concisely and helpfully.";
+      } else if (modelId.contains('llama_3')) {
+        sysPrompt = "You are a smart AI assistant based on Llama 3.2. Provide direct and polite responses.";
+      }
+
+      _session = ChatSession(_engine, systemPrompt: sysPrompt);
+
       final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.ready;
       state = state.copyWith(modelStatuses: statuses);
     } catch (e) {
       try { await File(path).delete(); } catch (_) {}
       final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
       state = state.copyWith(modelStatuses: statuses, errorMessage: "Failed to load model. File may be corrupted — please re-download. ($e)");
-      _session = null;
     }
   }
 
@@ -202,18 +323,37 @@ class ChatNotifier extends Notifier<ChatState> {
     final progresses = Map<String, double>.from(state.downloadProgresses)..[modelId] = 0.0;
     state = state.copyWith(modelStatuses: statuses, downloadProgresses: progresses);
     try {
-      final model = availableModels.firstWhere((m) => m.id == modelId);
-      final dir = await getApplicationDocumentsDirectory();
-      final savePath = '${dir.path}/${model.fileName}';
-      await _dio.download(model.url, savePath, onReceiveProgress: (received, total) {
-        if (total != -1) {
-          final p = Map<String, double>.from(state.downloadProgresses)..[modelId] = received / total;
-          state = state.copyWith(downloadProgresses: p);
-        }
-      });
-      final finalStatuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.ready;
-      state = state.copyWith(modelStatuses: finalStatuses);
-      if (state.activeModelId == modelId) await _initModel(savePath, modelId);
+      final model = state.models.firstWhere((m) => m.id == modelId);
+      final task = DownloadTask(
+        url: model.url,
+        filename: model.fileName,
+        baseDirectory: BaseDirectory.applicationDocuments,
+        updates: Updates.statusAndProgress,
+        retries: 3,
+        allowPause: true,
+      );
+
+      await FileDownloader().download(
+        task,
+        onProgress: (progress) {
+          if (progress >= 0.0) {
+            final p = Map<String, double>.from(state.downloadProgresses)..[modelId] = progress.clamp(0.0, 1.0);
+            state = state.copyWith(downloadProgresses: p);
+          }
+        },
+        onStatus: (status) async {
+          if (status == TaskStatus.complete) {
+            // Use task.filePath() — the single source of truth for where the file was saved
+            final savedPath = await task.filePath();
+            final finalStatuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.ready;
+            state = state.copyWith(modelStatuses: finalStatuses);
+            if (state.activeModelId == modelId) await _initModel(savedPath, modelId);
+          } else if (status == TaskStatus.failed || status == TaskStatus.canceled) {
+            final s = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
+            state = state.copyWith(modelStatuses: s, errorMessage: 'Download failed or was canceled. Please try again.');
+          }
+        },
+      );
     } catch (e) {
       final s = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
       state = state.copyWith(modelStatuses: s, errorMessage: "Download failed: $e");
@@ -221,7 +361,7 @@ class ChatNotifier extends Notifier<ChatState> {
   }
 
   Future<void> deleteModel(String modelId) async {
-    final model = availableModels.firstWhere((m) => m.id == modelId);
+    final model = state.models.firstWhere((m) => m.id == modelId);
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/${model.fileName}');
     if (await file.exists()) await file.delete();
@@ -234,8 +374,19 @@ class ChatNotifier extends Notifier<ChatState> {
     if (_isGenerating) _stopRequested = true;
   }
 
-  void sendMessage(String text) async {
-    if (state.activeModelStatus != ModelStatus.ready || _isGenerating || _session == null) return;
+  /// Streams a raw prompt completion; used by Prompt Lab, Game Maker, etc.
+  /// Creates a fresh ChatSession so no context bleeds into chat history.
+  Stream<String> streamPrompt(String prompt) async* {
+    if (state.activeModelStatus != ModelStatus.ready) return;
+    final session = ChatSession(_engine, systemPrompt: '');
+    await for (final chunk in session.create([LlamaTextContent(prompt)])) {
+      final content = chunk.choices.first.delta.content;
+      if (content != null && content.isNotEmpty) yield content;
+    }
+  }
+
+  bool sendMessage(String text) {
+    if (state.activeModelStatus != ModelStatus.ready || _isGenerating || _session == null) return false;
 
     _stopRequested = false;
     final userMessage = Message(id: DateTime.now().millisecondsSinceEpoch.toString(), text: text, isUser: true, timestamp: DateTime.now());
@@ -249,6 +400,11 @@ class ChatNotifier extends Notifier<ChatState> {
     );
 
     _isGenerating = true;
+    _runGeneration(text, botMessageId);
+    return true;
+  }
+
+  Future<void> _runGeneration(String text, String botMessageId) async {
     bool stopped = false;
 
     try {
@@ -256,19 +412,24 @@ class ChatNotifier extends Notifier<ChatState> {
       final startTime = DateTime.now();
       int tokenCount = 0;
 
+      // Use the persistent ChatSession for memory history
       await for (final chunk in _session!.create([LlamaTextContent(text)])) {
         if (_stopRequested) {
           stopped = true;
           break;
         }
         final content = chunk.choices.first.delta.content;
-        if (content != null) {
+        if (content != null && content.isNotEmpty) {
           currentText += content;
           tokenCount++;
-          final elapsed = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
-          final tps = elapsed > 0 ? tokenCount / elapsed : 0.0;
-          final messages = state.messages.map((m) => m.id == botMessageId ? m.copyWith(text: currentText) : m).toList();
-          state = state.copyWith(messages: messages, liveStats: '${tps.toStringAsFixed(1)} tok/s');
+          
+          // Optimization: Update state only every few tokens or at the end to maximize generation speed
+          if (tokenCount % 3 == 0 || chunk.choices.first.finishReason != null) {
+            final elapsed = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
+            final tps = elapsed > 0 ? tokenCount / elapsed : 0.0;
+            final messages = state.messages.map((m) => m.id == botMessageId ? m.copyWith(text: currentText) : m).toList();
+            state = state.copyWith(messages: messages, liveStats: '${tps.toStringAsFixed(1)} tok/s');
+          }
         }
       }
 
@@ -289,7 +450,6 @@ class ChatNotifier extends Notifier<ChatState> {
     }
   }
 
-  // ── CPU monitoring (reads /proc/stat, Android / Linux only) ────────────────
   void _startCpuMonitor() {
     _cpuTimer = Timer.periodic(const Duration(seconds: 2), (_) => _readCpuUsage());
   }
@@ -301,9 +461,8 @@ class ChatNotifier extends Notifier<ChatState> {
       if (cpuLine.isEmpty) return;
 
       final parts = cpuLine.split(RegExp(r'\s+'));
-      // user, nice, system, idle, iowait, irq, softirq
       final times = parts.skip(1).take(7).map(int.parse).toList();
-      final idle = times[3] + times[4]; // idle + iowait
+      final idle = times[3] + times[4];
       final total = times.fold(0, (a, b) => a + b);
 
       if (_lastCpuTimes != null) {
@@ -316,7 +475,6 @@ class ChatNotifier extends Notifier<ChatState> {
       }
       _lastCpuTimes = times;
     } catch (_) {
-      // /proc/stat not available on this platform — silently ignore
     }
   }
 }

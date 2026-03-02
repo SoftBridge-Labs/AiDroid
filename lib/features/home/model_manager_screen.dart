@@ -11,14 +11,116 @@ class ModelManagerScreen extends ConsumerWidget {
     final chatState = ref.watch(chatProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Models')),
+      backgroundColor: const Color(0xFF0E0E14),
+      appBar: AppBar(
+        title: const Text('Manage Models'),
+        backgroundColor: const Color(0xFF0E0E14),
+      ),
       body: ListView.builder(
         padding: const EdgeInsets.all(24),
-        itemCount: availableModels.length,
+        itemCount: chatState.models.length,
         itemBuilder: (context, index) {
-          final model = availableModels[index];
+          final model = chatState.models[index];
           return _buildModelCard(context, ref, chatState, model);
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF6C63FF),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text('Add Custom Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        onPressed: () => _showAddDialog(context, ref),
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context, WidgetRef ref) {
+    final nameCtrl = TextEditingController();
+    final urlCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF13131C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24, right: 24, top: 8,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text('Add Custom Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+            const SizedBox(height: 6),
+            Text('Must be a HuggingFace .gguf file URL', style: GoogleFonts.outfit(color: Colors.white38, fontSize: 13)),
+            const SizedBox(height: 20),
+            _field(nameCtrl, 'Model Name', Icons.tag, false),
+            const SizedBox(height: 14),
+            _field(descCtrl, 'Description (optional)', Icons.notes, false),
+            const SizedBox(height: 14),
+            _field(urlCtrl, 'https://huggingface.co/.../model.gguf', Icons.link, false),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text('Add Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                onPressed: () {
+                  final url = urlCtrl.text.trim();
+                  final name = nameCtrl.text.trim();
+                  if (name.isNotEmpty && url.isNotEmpty && url.contains('huggingface.co') && url.endsWith('.gguf')) {
+                    ref.read(chatProvider.notifier).addCustomModel(name, descCtrl.text.trim(), url);
+                    Navigator.pop(ctx);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Enter a valid HuggingFace .gguf URL', style: GoogleFonts.outfit()),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController ctrl, String hint, IconData icon, bool obscure) {
+    return TextField(
+      controller: ctrl,
+      obscureText: obscure,
+      style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.outfit(color: Colors.white38, fontSize: 13),
+        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.06),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
