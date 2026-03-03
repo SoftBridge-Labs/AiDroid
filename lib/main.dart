@@ -38,7 +38,7 @@ class AiDroidApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AiDroid Gallery',
+      title: 'AiDroid',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: hasSeenWelcome ? const ChatScreen() : const WelcomeScreen(),

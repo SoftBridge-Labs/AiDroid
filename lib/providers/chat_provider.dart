@@ -16,12 +16,15 @@ class AiModel {
   final String url;
   final String fileName;
 
+  final String weight; // 'Light', 'Medium', 'High'
+
   const AiModel({
     required this.id,
     required this.name,
     required this.description,
     required this.url,
     required this.fileName,
+    required this.weight,
   });
 
   Map<String, dynamic> toJson() => {
@@ -30,6 +33,7 @@ class AiModel {
     'description': description,
     'url': url,
     'fileName': fileName,
+    'weight': weight,
   };
 
   factory AiModel.fromJson(Map<String, dynamic> json) => AiModel(
@@ -38,37 +42,18 @@ class AiModel {
     description: json['description'],
     url: json['url'],
     fileName: json['fileName'],
+    weight: json['weight'] ?? 'Medium',
   );
 }
 
 const List<AiModel> defaultModels = [
-  AiModel(
-    id: 'gemma_2b_q2',
-    name: 'Gemma 2 2B IT (Q2_K)',
-    description: 'Geema. Google’s smart and lightweight model (~1.6GB). Excellent reasoning.',
-    url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q2_K.gguf',
-    fileName: 'gemma_2b_q2.gguf',
-  ),
-  AiModel(
-    id: 'llama_3_2_1b_q2',
-    name: 'Llama 3.2 1B Instruct (Q2_K)',
-    description: 'Extremely fast and optimized for instruction following (~0.6GB).',
-    url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q2_K.gguf',
-    fileName: 'llama_3_s1b_q2.gguf',
-  ),
-  AiModel(
-    id: 'qwen_2_5_1_5b_q2',
-    name: 'Qwen 2.5 1.5B Instruct (Q2_K)',
-    description: 'Alibaba’s state-of-the-art multilingual lightweight model (~0.6GB).',
-    url: 'https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q2_K.gguf',
-    fileName: 'qwen_2_5_1_5b_q2.gguf',
-  ),
   AiModel(
     id: 'tinyllama_q2',
     name: 'TinyLlama 1.1B Chat (Q2_K)',
     description: 'Fast and efficient. Best for low memory devices (~480MB).',
     url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf',
     fileName: 'tinyllama_q2.gguf',
+    weight: 'Light',
   ),
   AiModel(
     id: 'deepseek_coder_q2',
@@ -76,13 +61,39 @@ const List<AiModel> defaultModels = [
     description: 'Great for coding tasks, very lightweight (~580MB).',
     url: 'https://huggingface.co/TheBloke/deepseek-coder-1.3b-instruct-GGUF/resolve/main/deepseek-coder-1.3b-instruct.Q2_K.gguf',
     fileName: 'deepseek_coder_q2.gguf',
+    weight: 'Light',
   ),
   AiModel(
     id: 'phi2_q2',
     name: 'Phi-2 (Q2_K)',
-    description: 'Better reasoning, slower (~1.1GB).',
+    description: 'Better reasoning, moderate speed (~1.1GB).',
     url: 'https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q2_K.gguf',
     fileName: 'phi2_q2.gguf',
+    weight: 'Medium',
+  ),
+  AiModel(
+    id: 'orca_mini_3b_q2',
+    name: 'Orca Mini 3B (Q2_K)',
+    description: 'Fast and lightweight reasoning model (~1.4GB).',
+    url: 'https://huggingface.co/TheBloke/orca_mini_3B-GGUF/resolve/main/orca_mini_3b.q2_K.gguf',
+    fileName: 'orca_mini_3b_q2.gguf',
+    weight: 'Medium',
+  ),
+  AiModel(
+    id: 'mistral_7b_q2',
+    name: 'Mistral 7B Instruct (Q2_K)',
+    description: 'Excellent instruction following and reasoning from Mistral AI (~3.0GB).',
+    url: 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf',
+    fileName: 'mistral_7b_q2.gguf',
+    weight: 'High',
+  ),
+  AiModel(
+    id: 'openhermes_2_5_q2',
+    name: 'OpenHermes 2.5 Mistral 7B (Q2_K)',
+    description: 'Highly capable model fine-tuned on diverse datasets (~3.0GB).',
+    url: 'https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q2_K.gguf',
+    fileName: 'openhermes_2_5_q2.gguf',
+    weight: 'High',
   ),
 ];
 
@@ -98,6 +109,7 @@ class ChatState {
   final String liveStats;
   /// CPU usage string e.g. "CPU 34%"
   final String cpuUsage;
+  final String systemInstruction;
 
   ChatState({
     required this.messages,
@@ -109,6 +121,7 @@ class ChatState {
     this.usageStats = '',
     this.liveStats = '',
     this.cpuUsage = '',
+    this.systemInstruction = '',
   });
 
   ModelStatus get activeModelStatus => modelStatuses[activeModelId] ?? ModelStatus.notDownloaded;
@@ -124,6 +137,7 @@ class ChatState {
     String? usageStats,
     String? liveStats,
     String? cpuUsage,
+    String? systemInstruction,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -135,6 +149,7 @@ class ChatState {
       usageStats: usageStats ?? this.usageStats,
       liveStats: liveStats ?? this.liveStats,
       cpuUsage: cpuUsage ?? this.cpuUsage,
+      systemInstruction: systemInstruction ?? this.systemInstruction,
     );
   }
 }
@@ -188,6 +203,7 @@ class ChatNotifier extends Notifier<ChatState> {
       activeModelId: initialModels.first.id,
       modelStatuses: {for (var m in initialModels) m.id: ModelStatus.notDownloaded},
       downloadProgresses: {for (var m in initialModels) m.id: 0.0},
+      systemInstruction: '',
     );
   }
 
@@ -212,6 +228,9 @@ class ChatNotifier extends Notifier<ChatState> {
         ? savedActiveModelId 
         : defaultModels.first.id;
 
+    final savedSystemInstruction = prefs.getString('system_instruction') ?? 
+        'You are a helpful AI assistant. Always respond concisely and politely. For short greetings like "hi", "hello", or "how are you", respond with a friendly but brief greeting. Maintain a conversational and intelligent tone.';
+
     final dir = await getApplicationDocumentsDirectory();
     final statuses = Map<String, ModelStatus>.from(state.modelStatuses);
     final progresses = Map<String, double>.from(state.downloadProgresses);
@@ -227,11 +246,23 @@ class ChatNotifier extends Notifier<ChatState> {
       activeModelId: activeId,
       modelStatuses: statuses,
       downloadProgresses: progresses,
+      systemInstruction: savedSystemInstruction,
     );
 
     if (statuses[activeId] == ModelStatus.ready) {
       final activeModel = loadedModels.firstWhere((m) => m.id == activeId);
       await _initModel('${dir.path}/${activeModel.fileName}', activeId);
+    }
+  }
+
+  Future<void> setSystemInstruction(String instruction) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('system_instruction', instruction);
+    state = state.copyWith(systemInstruction: instruction);
+    
+    // Recreate session with new instruction if model is ready
+    if (state.activeModelStatus == ModelStatus.ready && _session != null) {
+      _session = ChatSession(_engine, systemPrompt: instruction);
     }
   }
 
@@ -245,6 +276,7 @@ class ChatNotifier extends Notifier<ChatState> {
       description: description,
       url: url,
       fileName: fileName,
+      weight: 'Custom',
     );
     final newModels = [...state.models, model];
     
@@ -291,20 +323,7 @@ class ChatNotifier extends Notifier<ChatState> {
         ),
       );
       
-      String sysPrompt = "You are a helpful AI assistant. Answer concisely and directly.";
-      if (modelId.contains('tinyllama')) {
-        sysPrompt = "You are a helpful AI assistant. Always respond concisely and directly.";
-      } else if (modelId.contains('deepseek')) {
-        sysPrompt = "You are an AI programming assistant. Provide concise technical answers.";
-      } else if (modelId.contains('phi')) {
-        sysPrompt = "You are an intelligent AI. Answer questions directly and warmly.";
-      } else if (modelId.contains('gemma')) {
-        sysPrompt = "You are Gemma, a smart AI assistant from Google. Answer concisely and clearly.";
-      } else if (modelId.contains('qwen')) {
-        sysPrompt = "You are Qwen, a helpful assistant. Reply concisely and helpfully.";
-      } else if (modelId.contains('llama_3')) {
-        sysPrompt = "You are a smart AI assistant based on Llama 3.2. Provide direct and polite responses.";
-      }
+      String sysPrompt = state.systemInstruction;
 
       _session = ChatSession(_engine, systemPrompt: sysPrompt);
 

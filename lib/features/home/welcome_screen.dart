@@ -84,7 +84,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     FadeInDown(
                       delay: const Duration(milliseconds: 200),
                       child: Text(
-                        'Experimental Project',
+                        'Local AI Assistant',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.outfit(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                       ),

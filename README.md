@@ -36,7 +36,7 @@ These instructions will get you a copy of the project up and running on your loc
 ## Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/aidroid.git
+git clone https://github.com/SoftBridge-Labs/AiDroid.git
 
 # Navigate to the project directory
 cd aidroid

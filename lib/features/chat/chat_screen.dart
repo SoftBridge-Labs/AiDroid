@@ -1,15 +1,18 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/chat_provider.dart';
 import '../audio/audio_scribe_screen.dart';
-import '../game/ai_game_maker_screen.dart';
 import '../home/model_manager_screen.dart';
 import '../text/prompt_lab_screen.dart';
 import '../vision/ask_image_screen.dart';
+
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -21,6 +24,30 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  Future<void> _scanTextFromImage() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+
+      final inputImage = InputImage.fromFilePath(pickedFile.path);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      
+      await textRecognizer.close();
+
+      if (recognizedText.text.trim().isNotEmpty) {
+        setState(() {
+          _controller.text = _controller.text + (_controller.text.isEmpty ? '' : '\n') + recognizedText.text;
+        });
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in image.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error scanning text: $e')));
+    }
+  }
 
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
@@ -55,6 +82,59 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _showSystemInstructionDialog() {
+    final systemInstruction = ref.read(chatProvider).systemInstruction;
+    final TextEditingController instController = TextEditingController(text: systemInstruction);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1C1C28),
+          title: Text(
+            'System Instruction',
+            style: GoogleFonts.outfit(color: Colors.white),
+          ),
+          content: TextField(
+            controller: instController,
+            style: GoogleFonts.outfit(color: Colors.white),
+            maxLines: 5,
+            minLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Enter custom instructions for the AI...',
+              hintStyle: GoogleFonts.outfit(color: Colors.white38),
+              filled: true,
+              fillColor: const Color(0xFF13131C),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF),
+              ),
+              onPressed: () {
+                ref.read(chatProvider.notifier).setSystemInstruction(instController.text.trim());
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('System instruction updated')),
+                );
+              },
+              child: Text('Save', style: GoogleFonts.outfit(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -97,21 +177,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 padding: EdgeInsets.zero,
                 children: [
                   _buildDrawerSection('AI Features'),
-                  _buildDrawerItem(Icons.image_search, 'Vision / Ask Image', const Color(0xFF00C9FF), 
+                  _buildDrawerItem(Icons.image_search, 'Vision Assistant', const Color(0xFF00C9FF), 
                     () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AskImageScreen()))),
+
                   _buildDrawerItem(Icons.science_outlined, 'Prompt Lab', const Color(0xFFFFB75E), 
                     () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PromptLabScreen()))),
                   _buildDrawerItem(Icons.mic_none_rounded, 'Audio Scribe', const Color(0xFFF093FB), 
                     () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioScribeScreen()))),
-                  _buildDrawerItem(Icons.videogame_asset_outlined, 'AI Game Maker', const Color(0xFF43E97B), 
-                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiGameMakerScreen()))),
                   
                   const Divider(color: Colors.white12, height: 32),
                   
+                  _buildDrawerSection('Settings'),
+                  _buildDrawerItem(Icons.psychology_outlined, 'System Instruction', Colors.amberAccent, _showSystemInstructionDialog),
+
+                  const Divider(color: Colors.white12, height: 32),
+
                   _buildDrawerSection('Community'),
                   _buildDrawerItem(Icons.favorite, 'Sponsor Project', Colors.pinkAccent, 
                     () => _launchUrl('https://github.com/sponsors/PrakharDoneria')),
-                  _buildDrawerItem(Icons.code_rounded, 'Contribute', Colors.greenAccent, 
+                  _buildDrawerItem(Icons.star_outline_rounded, 'Star on GitHub', Colors.amberAccent, 
+                    () => _launchUrl('https://github.com/SoftBridge-Labs/AiDroid')),
+                  _buildDrawerItem(Icons.code_rounded, 'Source Code', Colors.greenAccent, 
                     () => _launchUrl('https://github.com/SoftBridge-Labs/AiDroid')),
                   _buildDrawerItem(Icons.info_outline, 'About', Colors.blueAccent, () {
                     showAboutDialog(
@@ -297,50 +383,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       duration: const Duration(milliseconds: 200),
       child: Align(
         alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-          decoration: BoxDecoration(
-            color: message.isUser
-                ? const Color(0xFF6C63FF)
-                : const Color(0xFF1C1C28),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(message.isUser ? 18 : 4),
-              bottomRight: Radius.circular(message.isUser ? 4 : 18),
+        child: GestureDetector(
+          onLongPress: () {
+            Clipboard.setData(ClipboardData(text: message.text));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message copied to clipboard'), duration: Duration(seconds: 1)));
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+            decoration: BoxDecoration(
+              color: message.isUser
+                  ? const Color(0xFF6C63FF)
+                  : const Color(0xFF1C1C28),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(message.isUser ? 18 : 4),
+                bottomRight: Radius.circular(message.isUser ? 4 : 18),
+              ),
             ),
+            child: message.text.isEmpty
+                ? const SizedBox(
+                    width: 20,
+                    height: 14,
+                    child: _TypingDots(),
+                  )
+                : message.isUser
+                    ? Text(
+                        message.text,
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          height: 1.45,
+                          color: Colors.white,
+                        ),
+                      )
+                    : MarkdownBody(
+                        data: message.text,
+                        styleSheet: MarkdownStyleSheet(
+                          p: GoogleFonts.outfit(fontSize: 15, height: 1.5, color: Colors.white.withValues(alpha: 0.9)),
+                          code: GoogleFonts.sourceCodePro(fontSize: 13, color: Colors.cyanAccent, backgroundColor: Colors.black45),
+                          codeblockDecoration: BoxDecoration(color: const Color(0xFF0E0E14), borderRadius: BorderRadius.circular(8)),
+                          h1: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                          h2: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          h3: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 15),
+                          strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
+                          listBullet: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
+                        ),
+                      ),
           ),
-          child: message.text.isEmpty
-              ? const SizedBox(
-                  width: 20,
-                  height: 14,
-                  child: _TypingDots(),
-                )
-              : message.isUser
-                  ? Text(
-                      message.text,
-                      style: GoogleFonts.outfit(
-                        fontSize: 15,
-                        height: 1.45,
-                        color: Colors.white,
-                      ),
-                    )
-                  : MarkdownBody(
-                      data: message.text,
-                      styleSheet: MarkdownStyleSheet(
-                        p: GoogleFonts.outfit(fontSize: 15, height: 1.5, color: Colors.white.withValues(alpha: 0.9)),
-                        code: GoogleFonts.sourceCodePro(fontSize: 13, color: Colors.cyanAccent, backgroundColor: Colors.black45),
-                        codeblockDecoration: BoxDecoration(color: const Color(0xFF0E0E14), borderRadius: BorderRadius.circular(8)),
-                        h1: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                        h2: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                        h3: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 15),
-                        strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
-                        listBullet: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
-                      ),
-                    ),
         ),
       ),
     );
@@ -458,6 +550,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     fillColor: Colors.white.withValues(alpha: 0.06),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                     isDense: true,
+                    suffixIcon: isReady ? IconButton(
+                      icon: const Icon(Icons.document_scanner_outlined, color: Colors.white54),
+                      tooltip: 'Scan text from image',
+                      onPressed: _scanTextFromImage,
+                    ) : null,
                   ),
                   onSubmitted: isReady ? (_) => _sendMessage() : null,
                 ),

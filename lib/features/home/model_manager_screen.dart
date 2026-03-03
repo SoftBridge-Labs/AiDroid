@@ -152,7 +152,27 @@ class ModelManagerScreen extends ConsumerWidget {
                 ref.read(chatProvider.notifier).setActiveModel(val);
               }
             },
-            title: Text(model.name, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+            title: Row(
+              children: [
+                Expanded(child: Text(model.name, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getWeightColor(model.weight).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _getWeightColor(model.weight).withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    model.weight,
+                    style: GoogleFonts.outfit(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: _getWeightColor(model.weight),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -209,5 +229,14 @@ class ModelManagerScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Color _getWeightColor(String weight) {
+    switch (weight) {
+      case 'Light': return Colors.greenAccent;
+      case 'Medium': return Colors.orangeAccent;
+      case 'High': return Colors.redAccent;
+      default: return Colors.blueAccent;
+    }
   }
 }
