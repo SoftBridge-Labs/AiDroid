@@ -14,25 +14,33 @@ void main() async {
   await Permission.notification.request();
 
   FileDownloader().configureNotification(
-    running: const TaskNotification('Downloading AI Model', 'Download: {progress}%'),
-    complete: const TaskNotification('Model is Ready', 'The AI model has been successfully downloaded.'),
-    error: const TaskNotification('Download Failed', 'Failed to download the model.'),
-    paused: const TaskNotification('Download Paused', 'Your download is currently paused.'),
+    running: const TaskNotification(
+      'Downloading AI Model',
+      'Download: {progress}%',
+    ),
+    complete: const TaskNotification(
+      'Model is Ready',
+      'The AI model has been successfully downloaded.',
+    ),
+    error: const TaskNotification(
+      'Download Failed',
+      'Failed to download the model.',
+    ),
+    paused: const TaskNotification(
+      'Download Paused',
+      'Your download is currently paused.',
+    ),
     progressBar: true,
   );
   final prefs = await SharedPreferences.getInstance();
   final hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
 
-  runApp(
-    ProviderScope(
-      child: AiDroidApp(hasSeenWelcome: hasSeenWelcome),
-    ),
-  );
+  runApp(ProviderScope(child: AiDroidApp(hasSeenWelcome: hasSeenWelcome)));
 }
 
 class AiDroidApp extends StatelessWidget {
   final bool hasSeenWelcome;
-  
+
   const AiDroidApp({super.key, required this.hasSeenWelcome});
 
   @override

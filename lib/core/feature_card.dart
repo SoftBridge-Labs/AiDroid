@@ -35,23 +35,22 @@ class FeatureCard extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           border: 2,
           linearGradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                gradient[0].withOpacity(0.1),
-                gradient[1].withOpacity(0.05),
-              ],
-              stops: const [
-                0.1,
-                1,
-              ]),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              gradient[0].withOpacity(0.1),
+              gradient[1].withOpacity(0.05),
+            ],
+            stops: const [0.1, 1],
+          ),
           borderGradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                gradient[0].withOpacity(0.5),
-                gradient[1].withOpacity(0.5),
-              ]),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              gradient[0].withOpacity(0.5),
+              gradient[1].withOpacity(0.5),
+            ],
+          ),
           child: Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -63,11 +62,7 @@ class FeatureCard extends StatelessWidget {
                     color: gradient[0].withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: Icon(icon, color: Colors.white, size: 32),
                 ),
                 const Spacer(),
                 Text(

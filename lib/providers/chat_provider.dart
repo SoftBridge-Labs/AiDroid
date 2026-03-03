@@ -51,7 +51,8 @@ const List<AiModel> defaultModels = [
     id: 'tinyllama_q2',
     name: 'TinyLlama 1.1B Chat (Q2_K)',
     description: 'Fast and efficient. Best for low memory devices (~480MB).',
-    url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf',
+    url:
+        'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf',
     fileName: 'tinyllama_q2.gguf',
     weight: 'Light',
   ),
@@ -59,7 +60,8 @@ const List<AiModel> defaultModels = [
     id: 'deepseek_coder_q2',
     name: 'Deepseek Coder 1.3B (Q2_K)',
     description: 'Great for coding tasks, very lightweight (~580MB).',
-    url: 'https://huggingface.co/TheBloke/deepseek-coder-1.3b-instruct-GGUF/resolve/main/deepseek-coder-1.3b-instruct.Q2_K.gguf',
+    url:
+        'https://huggingface.co/TheBloke/deepseek-coder-1.3b-instruct-GGUF/resolve/main/deepseek-coder-1.3b-instruct.Q2_K.gguf',
     fileName: 'deepseek_coder_q2.gguf',
     weight: 'Light',
   ),
@@ -67,7 +69,8 @@ const List<AiModel> defaultModels = [
     id: 'phi2_q2',
     name: 'Phi-2 (Q2_K)',
     description: 'Better reasoning, moderate speed (~1.1GB).',
-    url: 'https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q2_K.gguf',
+    url:
+        'https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q2_K.gguf',
     fileName: 'phi2_q2.gguf',
     weight: 'Medium',
   ),
@@ -75,23 +78,28 @@ const List<AiModel> defaultModels = [
     id: 'orca_mini_3b_q2',
     name: 'Orca Mini 3B (Q2_K)',
     description: 'Fast and lightweight reasoning model (~1.4GB).',
-    url: 'https://huggingface.co/TheBloke/orca_mini_3B-GGUF/resolve/main/orca_mini_3b.q2_K.gguf',
+    url:
+        'https://huggingface.co/TheBloke/orca_mini_3B-GGUF/resolve/main/orca_mini_3b.q2_K.gguf',
     fileName: 'orca_mini_3b_q2.gguf',
     weight: 'Medium',
   ),
   AiModel(
     id: 'mistral_7b_q2',
     name: 'Mistral 7B Instruct (Q2_K)',
-    description: 'Excellent instruction following and reasoning from Mistral AI (~3.0GB).',
-    url: 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf',
+    description:
+        'Excellent instruction following and reasoning from Mistral AI (~3.0GB).',
+    url:
+        'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf',
     fileName: 'mistral_7b_q2.gguf',
     weight: 'High',
   ),
   AiModel(
     id: 'openhermes_2_5_q2',
     name: 'OpenHermes 2.5 Mistral 7B (Q2_K)',
-    description: 'Highly capable model fine-tuned on diverse datasets (~3.0GB).',
-    url: 'https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q2_K.gguf',
+    description:
+        'Highly capable model fine-tuned on diverse datasets (~3.0GB).',
+    url:
+        'https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q2_K.gguf',
     fileName: 'openhermes_2_5_q2.gguf',
     weight: 'High',
   ),
@@ -105,8 +113,10 @@ class ChatState {
   final Map<String, double> downloadProgresses;
   final String errorMessage;
   final String usageStats;
+
   /// Live token/s during generation; empty when idle.
   final String liveStats;
+
   /// CPU usage string e.g. "CPU 34%"
   final String cpuUsage;
   final String systemInstruction;
@@ -124,7 +134,8 @@ class ChatState {
     this.systemInstruction = '',
   });
 
-  ModelStatus get activeModelStatus => modelStatuses[activeModelId] ?? ModelStatus.notDownloaded;
+  ModelStatus get activeModelStatus =>
+      modelStatuses[activeModelId] ?? ModelStatus.notDownloaded;
   double get activeDownloadProgress => downloadProgresses[activeModelId] ?? 0.0;
 
   ChatState copyWith({
@@ -160,9 +171,19 @@ class Message {
   final bool isUser;
   final DateTime timestamp;
 
-  Message({required this.id, required this.text, required this.isUser, required this.timestamp});
-  
-  Message copyWith({String? id, String? text, bool? isUser, DateTime? timestamp}) {
+  Message({
+    required this.id,
+    required this.text,
+    required this.isUser,
+    required this.timestamp,
+  });
+
+  Message copyWith({
+    String? id,
+    String? text,
+    bool? isUser,
+    DateTime? timestamp,
+  }) {
     return Message(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -179,9 +200,10 @@ class ChatNotifier extends Notifier<ChatState> {
   bool _stopRequested = false;
   Timer? _cpuTimer;
   List<int>? _lastCpuTimes;
-  
+
   bool get isGenerating => _isGenerating;
-  bool get isSessionLoading => _session == null && state.activeModelStatus == ModelStatus.ready;
+  bool get isSessionLoading =>
+      _session == null && state.activeModelStatus == ModelStatus.ready;
 
   @override
   ChatState build() {
@@ -193,15 +215,17 @@ class ChatNotifier extends Notifier<ChatState> {
     // Sync init the state
     final initialModels = defaultModels;
     _startCpuMonitor();
-    
+
     // Async load from disk
     Future.microtask(() => _initData());
-    
+
     return ChatState(
       messages: [],
       models: initialModels,
       activeModelId: initialModels.first.id,
-      modelStatuses: {for (var m in initialModels) m.id: ModelStatus.notDownloaded},
+      modelStatuses: {
+        for (var m in initialModels) m.id: ModelStatus.notDownloaded,
+      },
       downloadProgresses: {for (var m in initialModels) m.id: 0.0},
       systemInstruction: '',
     );
@@ -210,7 +234,7 @@ class ChatNotifier extends Notifier<ChatState> {
   Future<void> _initData() async {
     final prefs = await SharedPreferences.getInstance();
     List<AiModel> loadedModels = List.from(defaultModels);
-    
+
     final customModelsJson = prefs.getString('custom_models');
     if (customModelsJson != null) {
       try {
@@ -223,12 +247,14 @@ class ChatNotifier extends Notifier<ChatState> {
       }
     }
 
-    final savedActiveModelId = prefs.getString('active_model_id') ?? defaultModels.first.id;
-    final activeId = loadedModels.any((m) => m.id == savedActiveModelId) 
-        ? savedActiveModelId 
+    final savedActiveModelId =
+        prefs.getString('active_model_id') ?? defaultModels.first.id;
+    final activeId = loadedModels.any((m) => m.id == savedActiveModelId)
+        ? savedActiveModelId
         : defaultModels.first.id;
 
-    final savedSystemInstruction = prefs.getString('system_instruction') ?? 
+    final savedSystemInstruction =
+        prefs.getString('system_instruction') ??
         'You are a helpful AI assistant. Always respond concisely and politely. For short greetings like "hi", "hello", or "how are you", respond with a friendly but brief greeting. Maintain a conversational and intelligent tone.';
 
     final dir = await getApplicationDocumentsDirectory();
@@ -237,7 +263,9 @@ class ChatNotifier extends Notifier<ChatState> {
 
     for (var model in loadedModels) {
       final file = File('${dir.path}/${model.fileName}');
-      statuses[model.id] = await file.exists() ? ModelStatus.ready : ModelStatus.notDownloaded;
+      statuses[model.id] = await file.exists()
+          ? ModelStatus.ready
+          : ModelStatus.notDownloaded;
       progresses[model.id] = 0.0;
     }
 
@@ -259,14 +287,18 @@ class ChatNotifier extends Notifier<ChatState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('system_instruction', instruction);
     state = state.copyWith(systemInstruction: instruction);
-    
+
     // Recreate session with new instruction if model is ready
     if (state.activeModelStatus == ModelStatus.ready && _session != null) {
       _session = ChatSession(_engine, systemPrompt: instruction);
     }
   }
 
-  Future<void> addCustomModel(String name, String description, String url) async {
+  Future<void> addCustomModel(
+    String name,
+    String description,
+    String url,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     String newId = 'custom_${DateTime.now().millisecondsSinceEpoch}';
     String fileName = '$newId.gguf';
@@ -279,22 +311,38 @@ class ChatNotifier extends Notifier<ChatState> {
       weight: 'Custom',
     );
     final newModels = [...state.models, model];
-    
-    final customModels = newModels.where((m) => !defaultModels.any((dm) => dm.id == m.id)).toList();
-    await prefs.setString('custom_models', jsonEncode(customModels.map((m) => m.toJson()).toList()));
-    
-    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[newId] = ModelStatus.notDownloaded;
-    final progresses = Map<String, double>.from(state.downloadProgresses)..[newId] = 0.0;
-    
-    state = state.copyWith(models: newModels, modelStatuses: statuses, downloadProgresses: progresses);
+
+    final customModels = newModels
+        .where((m) => !defaultModels.any((dm) => dm.id == m.id))
+        .toList();
+    await prefs.setString(
+      'custom_models',
+      jsonEncode(customModels.map((m) => m.toJson()).toList()),
+    );
+
+    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)
+      ..[newId] = ModelStatus.notDownloaded;
+    final progresses = Map<String, double>.from(state.downloadProgresses)
+      ..[newId] = 0.0;
+
+    state = state.copyWith(
+      models: newModels,
+      modelStatuses: statuses,
+      downloadProgresses: progresses,
+    );
   }
 
   Future<void> setActiveModel(String modelId) async {
     if (state.activeModelId == modelId || _isGenerating) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('active_model_id', modelId);
-    
-    state = state.copyWith(activeModelId: modelId, errorMessage: '', usageStats: '', liveStats: '');
+
+    state = state.copyWith(
+      activeModelId: modelId,
+      errorMessage: '',
+      usageStats: '',
+      liveStats: '',
+    );
     if (state.modelStatuses[modelId] == ModelStatus.ready) {
       final model = state.models.firstWhere((m) => m.id == modelId);
       final dir = await getApplicationDocumentsDirectory();
@@ -308,39 +356,58 @@ class ChatNotifier extends Notifier<ChatState> {
     try {
       _engine.dispose();
       _engine = LlamaEngine(LlamaBackend());
-      
+
       // Optimization: Fine-tune context and hardware usage
       await _engine.loadModel(
         path,
         modelParams: ModelParams(
-          // Metal/Vulkan work great on Apple devices and desktops, but Vulkan on Android 
+          // Metal/Vulkan work great on Apple devices and desktops, but Vulkan on Android
           // often causes OOM or driver crashes when loading models. Default to CPU for Android.
-          gpuLayers: Platform.isAndroid ? 0 : 99, 
-          preferredBackend: Platform.isAndroid ? GpuBackend.cpu : GpuBackend.auto,
-          contextSize: 1024, // Smaller context for significantly faster prompt processing on mobile
+          gpuLayers: Platform.isAndroid ? 0 : 99,
+          preferredBackend: Platform.isAndroid
+              ? GpuBackend.cpu
+              : GpuBackend.auto,
+          contextSize:
+              1024, // Smaller context for significantly faster prompt processing on mobile
           batchSize: 512, // Standard batch size
-          numberOfThreads: Platform.numberOfProcessors > 4 ? 4 : Platform.numberOfProcessors, // Don't use all cores to avoid heat/throttling
+          numberOfThreads: Platform.numberOfProcessors > 4
+              ? 4
+              : Platform
+                    .numberOfProcessors, // Don't use all cores to avoid heat/throttling
         ),
       );
-      
+
       String sysPrompt = state.systemInstruction;
 
       _session = ChatSession(_engine, systemPrompt: sysPrompt);
 
-      final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.ready;
+      final statuses = Map<String, ModelStatus>.from(state.modelStatuses)
+        ..[modelId] = ModelStatus.ready;
       state = state.copyWith(modelStatuses: statuses);
     } catch (e) {
-      try { await File(path).delete(); } catch (_) {}
-      final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
-      state = state.copyWith(modelStatuses: statuses, errorMessage: "Failed to load model. File may be corrupted — please re-download. ($e)");
+      try {
+        await File(path).delete();
+      } catch (_) {}
+      final statuses = Map<String, ModelStatus>.from(state.modelStatuses)
+        ..[modelId] = ModelStatus.error;
+      state = state.copyWith(
+        modelStatuses: statuses,
+        errorMessage:
+            "Failed to load model. File may be corrupted — please re-download. ($e)",
+      );
     }
   }
 
   Future<void> downloadModel(String modelId) async {
     if (state.modelStatuses[modelId] == ModelStatus.downloading) return;
-    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.downloading;
-    final progresses = Map<String, double>.from(state.downloadProgresses)..[modelId] = 0.0;
-    state = state.copyWith(modelStatuses: statuses, downloadProgresses: progresses);
+    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)
+      ..[modelId] = ModelStatus.downloading;
+    final progresses = Map<String, double>.from(state.downloadProgresses)
+      ..[modelId] = 0.0;
+    state = state.copyWith(
+      modelStatuses: statuses,
+      downloadProgresses: progresses,
+    );
     try {
       final model = state.models.firstWhere((m) => m.id == modelId);
       final task = DownloadTask(
@@ -356,7 +423,8 @@ class ChatNotifier extends Notifier<ChatState> {
         task,
         onProgress: (progress) {
           if (progress >= 0.0) {
-            final p = Map<String, double>.from(state.downloadProgresses)..[modelId] = progress.clamp(0.0, 1.0);
+            final p = Map<String, double>.from(state.downloadProgresses)
+              ..[modelId] = progress.clamp(0.0, 1.0);
             state = state.copyWith(downloadProgresses: p);
           }
         },
@@ -364,18 +432,31 @@ class ChatNotifier extends Notifier<ChatState> {
           if (status == TaskStatus.complete) {
             // Use task.filePath() — the single source of truth for where the file was saved
             final savedPath = await task.filePath();
-            final finalStatuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.ready;
+            final finalStatuses = Map<String, ModelStatus>.from(
+              state.modelStatuses,
+            )..[modelId] = ModelStatus.ready;
             state = state.copyWith(modelStatuses: finalStatuses);
-            if (state.activeModelId == modelId) await _initModel(savedPath, modelId);
-          } else if (status == TaskStatus.failed || status == TaskStatus.canceled) {
-            final s = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
-            state = state.copyWith(modelStatuses: s, errorMessage: 'Download failed or was canceled. Please try again.');
+            if (state.activeModelId == modelId)
+              await _initModel(savedPath, modelId);
+          } else if (status == TaskStatus.failed ||
+              status == TaskStatus.canceled) {
+            final s = Map<String, ModelStatus>.from(state.modelStatuses)
+              ..[modelId] = ModelStatus.error;
+            state = state.copyWith(
+              modelStatuses: s,
+              errorMessage:
+                  'Download failed or was canceled. Please try again.',
+            );
           }
         },
       );
     } catch (e) {
-      final s = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.error;
-      state = state.copyWith(modelStatuses: s, errorMessage: "Download failed: $e");
+      final s = Map<String, ModelStatus>.from(state.modelStatuses)
+        ..[modelId] = ModelStatus.error;
+      state = state.copyWith(
+        modelStatuses: s,
+        errorMessage: "Download failed: $e",
+      );
     }
   }
 
@@ -384,7 +465,8 @@ class ChatNotifier extends Notifier<ChatState> {
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/${model.fileName}');
     if (await file.exists()) await file.delete();
-    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)..[modelId] = ModelStatus.notDownloaded;
+    final statuses = Map<String, ModelStatus>.from(state.modelStatuses)
+      ..[modelId] = ModelStatus.notDownloaded;
     state = state.copyWith(modelStatuses: statuses);
     if (state.activeModelId == modelId) _session = null;
   }
@@ -405,12 +487,25 @@ class ChatNotifier extends Notifier<ChatState> {
   }
 
   bool sendMessage(String text) {
-    if (state.activeModelStatus != ModelStatus.ready || _isGenerating || _session == null) return false;
+    if (state.activeModelStatus != ModelStatus.ready ||
+        _isGenerating ||
+        _session == null)
+      return false;
 
     _stopRequested = false;
-    final userMessage = Message(id: DateTime.now().millisecondsSinceEpoch.toString(), text: text, isUser: true, timestamp: DateTime.now());
+    final userMessage = Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      text: text,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
     final botMessageId = (DateTime.now().millisecondsSinceEpoch + 1).toString();
-    final initialBotMessage = Message(id: botMessageId, text: '', isUser: false, timestamp: DateTime.now());
+    final initialBotMessage = Message(
+      id: botMessageId,
+      text: '',
+      isUser: false,
+      timestamp: DateTime.now(),
+    );
 
     state = state.copyWith(
       messages: [...state.messages, userMessage, initialBotMessage],
@@ -441,19 +536,31 @@ class ChatNotifier extends Notifier<ChatState> {
         if (content != null && content.isNotEmpty) {
           currentText += content;
           tokenCount++;
-          
+
           // Optimization: Update state only every few tokens or at the end to maximize generation speed
           if (tokenCount % 3 == 0 || chunk.choices.first.finishReason != null) {
-            final elapsed = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
+            final elapsed =
+                DateTime.now().difference(startTime).inMilliseconds / 1000.0;
             final tps = elapsed > 0 ? tokenCount / elapsed : 0.0;
-            final messages = state.messages.map((m) => m.id == botMessageId ? m.copyWith(text: currentText) : m).toList();
-            state = state.copyWith(messages: messages, liveStats: '${tps.toStringAsFixed(1)} tok/s');
+            final messages = state.messages
+                .map(
+                  (m) =>
+                      m.id == botMessageId ? m.copyWith(text: currentText) : m,
+                )
+                .toList();
+            state = state.copyWith(
+              messages: messages,
+              liveStats: '${tps.toStringAsFixed(1)} tok/s',
+            );
           }
         }
       }
 
-      final diffSeconds = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
-      final tps = diffSeconds > 0 ? (tokenCount / diffSeconds).toStringAsFixed(1) : '0.0';
+      final diffSeconds =
+          DateTime.now().difference(startTime).inMilliseconds / 1000.0;
+      final tps = diffSeconds > 0
+          ? (tokenCount / diffSeconds).toStringAsFixed(1)
+          : '0.0';
       state = state.copyWith(
         usageStats: stopped
             ? '$tps tok/s • $tokenCount tokens • stopped'
@@ -461,8 +568,14 @@ class ChatNotifier extends Notifier<ChatState> {
         liveStats: '',
       );
     } catch (e) {
-      final messages = state.messages.map((m) => m.id == botMessageId ? m.copyWith(text: 'Error: $e') : m).toList();
-      state = state.copyWith(messages: messages, liveStats: '', usageStats: 'Inference error');
+      final messages = state.messages
+          .map((m) => m.id == botMessageId ? m.copyWith(text: 'Error: $e') : m)
+          .toList();
+      state = state.copyWith(
+        messages: messages,
+        liveStats: '',
+        usageStats: 'Inference error',
+      );
     } finally {
       _isGenerating = false;
       _stopRequested = false;
@@ -470,13 +583,19 @@ class ChatNotifier extends Notifier<ChatState> {
   }
 
   void _startCpuMonitor() {
-    _cpuTimer = Timer.periodic(const Duration(seconds: 2), (_) => _readCpuUsage());
+    _cpuTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _readCpuUsage(),
+    );
   }
 
   Future<void> _readCpuUsage() async {
     try {
       final lines = await File('/proc/stat').readAsLines();
-      final cpuLine = lines.firstWhere((l) => l.startsWith('cpu '), orElse: () => '');
+      final cpuLine = lines.firstWhere(
+        (l) => l.startsWith('cpu '),
+        orElse: () => '',
+      );
       if (cpuLine.isEmpty) return;
 
       final parts = cpuLine.split(RegExp(r'\s+'));
@@ -489,13 +608,16 @@ class ChatNotifier extends Notifier<ChatState> {
         final prevIdle = _lastCpuTimes![3] + _lastCpuTimes![4];
         final dTotal = total - prevTotal;
         final dIdle = idle - prevIdle;
-        final usage = dTotal > 0 ? ((dTotal - dIdle) / dTotal * 100).round() : 0;
+        final usage = dTotal > 0
+            ? ((dTotal - dIdle) / dTotal * 100).round()
+            : 0;
         state = state.copyWith(cpuUsage: 'CPU $usage%');
       }
       _lastCpuTimes = times;
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 }
 
-final chatProvider = NotifierProvider<ChatNotifier, ChatState>(ChatNotifier.new);
+final chatProvider = NotifierProvider<ChatNotifier, ChatState>(
+  ChatNotifier.new,
+);

@@ -11,7 +11,8 @@ class AudioScribeScreen extends StatefulWidget {
   State<AudioScribeScreen> createState() => _AudioScribeScreenState();
 }
 
-class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTickerProviderStateMixin {
+class _AudioScribeScreenState extends State<AudioScribeScreen>
+    with SingleTickerProviderStateMixin {
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   bool _isListening = false;
@@ -39,7 +40,8 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
 
   Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize(
-      onError: (error) => setState(() => _statusMessage = 'Error: ${error.errorMsg}'),
+      onError: (error) =>
+          setState(() => _statusMessage = 'Error: ${error.errorMsg}'),
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
           setState(() => _isListening = false);
@@ -94,7 +96,13 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E14),
       appBar: AppBar(
-        title: Text('Audio Scribe', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Audio Scribe',
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: const Color(0xFF0E0E14),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -102,7 +110,8 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
             IconButton(
               icon: const Icon(Icons.copy, color: Colors.white54),
               tooltip: 'Copy transcript',
-              onPressed: () => Clipboard.setData(ClipboardData(text: _transcript)),
+              onPressed: () =>
+                  Clipboard.setData(ClipboardData(text: _transcript)),
             ),
           if (_transcript.isNotEmpty)
             IconButton(
@@ -132,7 +141,9 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
                           height: 160 + (_soundLevel * 40),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.pinkAccent.withValues(alpha: 0.08 * _pulseController.value),
+                            color: Colors.pinkAccent.withValues(
+                              alpha: 0.08 * _pulseController.value,
+                            ),
                           ),
                         ),
                       ),
@@ -146,14 +157,18 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
                             ? Colors.redAccent.withValues(alpha: 0.15)
                             : const Color(0xFF6C63FF).withValues(alpha: 0.15),
                         border: Border.all(
-                          color: _isListening ? Colors.redAccent : const Color(0xFF6C63FF),
+                          color: _isListening
+                              ? Colors.redAccent
+                              : const Color(0xFF6C63FF),
                           width: 2.5,
                         ),
                       ),
                       child: Icon(
                         _isListening ? Icons.stop_rounded : Icons.mic_rounded,
                         size: 52,
-                        color: _isListening ? Colors.redAccent : const Color(0xFF6C63FF),
+                        color: _isListening
+                            ? Colors.redAccent
+                            : const Color(0xFF6C63FF),
                       ),
                     ),
                   ],
@@ -189,12 +204,19 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
                     ),
                     child: Column(
                       children: [
-                        const Icon(Icons.record_voice_over_outlined, size: 40, color: Colors.white24),
+                        const Icon(
+                          Icons.record_voice_over_outlined,
+                          size: 40,
+                          color: Colors.white24,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'Speak clearly in English.\nYour words will appear here in real time.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white38,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -209,14 +231,20 @@ class _AudioScribeScreenState extends State<AudioScribeScreen> with SingleTicker
                       decoration: BoxDecoration(
                         color: const Color(0xFF1C1C28),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
                       ),
                       child: SingleChildScrollView(
                         child: SelectableText(
-                          _transcript.isEmpty ? 'Waiting for speech...' : _transcript,
+                          _transcript.isEmpty
+                              ? 'Waiting for speech...'
+                              : _transcript,
                           style: GoogleFonts.outfit(
                             fontSize: 17,
-                            color: _transcript.isEmpty ? Colors.white24 : Colors.white.withValues(alpha: 0.88),
+                            color: _transcript.isEmpty
+                                ? Colors.white24
+                                : Colors.white.withValues(alpha: 0.88),
                             height: 1.6,
                           ),
                         ),

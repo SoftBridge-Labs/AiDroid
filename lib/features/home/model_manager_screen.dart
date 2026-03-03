@@ -27,7 +27,13 @@ class ModelManagerScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF6C63FF),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('Add Custom Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(
+          'Add Custom Model',
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         onPressed: () => _showAddDialog(context, ref),
       ),
     );
@@ -47,7 +53,9 @@ class ModelManagerScreen extends ConsumerWidget {
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          left: 24, right: 24, top: 8,
+          left: 24,
+          right: 24,
+          top: 8,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
@@ -57,7 +65,8 @@ class ModelManagerScreen extends ConsumerWidget {
             // Handle bar
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.white24,
@@ -65,15 +74,30 @@ class ModelManagerScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            Text('Add Custom Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+            Text(
+              'Add Custom Model',
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('Must be a HuggingFace .gguf file URL', style: GoogleFonts.outfit(color: Colors.white38, fontSize: 13)),
+            Text(
+              'Must be a HuggingFace .gguf file URL',
+              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 13),
+            ),
             const SizedBox(height: 20),
             _field(nameCtrl, 'Model Name', Icons.tag, false),
             const SizedBox(height: 14),
             _field(descCtrl, 'Description (optional)', Icons.notes, false),
             const SizedBox(height: 14),
-            _field(urlCtrl, 'https://huggingface.co/.../model.gguf', Icons.link, false),
+            _field(
+              urlCtrl,
+              'https://huggingface.co/.../model.gguf',
+              Icons.link,
+              false,
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -81,20 +105,37 @@ class ModelManagerScreen extends ConsumerWidget {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6C63FF),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: Text('Add Model', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                label: Text(
+                  'Add Model',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 onPressed: () {
                   final url = urlCtrl.text.trim();
                   final name = nameCtrl.text.trim();
-                  if (name.isNotEmpty && url.isNotEmpty && url.contains('huggingface.co') && url.endsWith('.gguf')) {
-                    ref.read(chatProvider.notifier).addCustomModel(name, descCtrl.text.trim(), url);
+                  if (name.isNotEmpty &&
+                      url.isNotEmpty &&
+                      url.contains('huggingface.co') &&
+                      url.endsWith('.gguf')) {
+                    ref
+                        .read(chatProvider.notifier)
+                        .addCustomModel(name, descCtrl.text.trim(), url);
                     Navigator.pop(ctx);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Enter a valid HuggingFace .gguf URL', style: GoogleFonts.outfit()),
+                        content: Text(
+                          'Enter a valid HuggingFace .gguf URL',
+                          style: GoogleFonts.outfit(),
+                        ),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -108,7 +149,12 @@ class ModelManagerScreen extends ConsumerWidget {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String hint, IconData icon, bool obscure) {
+  Widget _field(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon,
+    bool obscure,
+  ) {
     return TextField(
       controller: ctrl,
       obscureText: obscure,
@@ -119,13 +165,24 @@ class ModelManagerScreen extends ConsumerWidget {
         prefixIcon: Icon(icon, color: Colors.white38, size: 20),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.06),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
 
-  Widget _buildModelCard(BuildContext context, WidgetRef ref, ChatState state, AiModel model) {
+  Widget _buildModelCard(
+    BuildContext context,
+    WidgetRef ref,
+    ChatState state,
+    AiModel model,
+  ) {
     final status = state.modelStatuses[model.id] ?? ModelStatus.notDownloaded;
     final progress = state.downloadProgresses[model.id] ?? 0.0;
     final isActive = state.activeModelId == model.id;
@@ -138,7 +195,7 @@ class ModelManagerScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isActive ? const Color(0xFF6C63FF) : Colors.transparent, 
+          color: isActive ? const Color(0xFF6C63FF) : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -154,13 +211,26 @@ class ModelManagerScreen extends ConsumerWidget {
             },
             title: Row(
               children: [
-                Expanded(child: Text(model.name, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white))),
+                Expanded(
+                  child: Text(
+                    model.name,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _getWeightColor(model.weight).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _getWeightColor(model.weight).withOpacity(0.5)),
+                    border: Border.all(
+                      color: _getWeightColor(model.weight).withOpacity(0.5),
+                    ),
                   ),
                   child: Text(
                     model.weight,
@@ -177,20 +247,28 @@ class ModelManagerScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
-                Text(model.description, style: GoogleFonts.outfit(color: Colors.white70)),
+                Text(
+                  model.description,
+                  style: GoogleFonts.outfit(color: Colors.white70),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     if (!isDownloaded && !isDownloading)
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                           backgroundColor: const Color(0xFF6C63FF),
-                           foregroundColor: Colors.white,
-                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                           textStyle: const TextStyle(fontSize: 12),
+                          backgroundColor: const Color(0xFF6C63FF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          textStyle: const TextStyle(fontSize: 12),
                         ),
                         onPressed: () {
-                          ref.read(chatProvider.notifier).downloadModel(model.id);
+                          ref
+                              .read(chatProvider.notifier)
+                              .downloadModel(model.id);
                         },
                         icon: const Icon(Icons.download, size: 16),
                         label: const Text('Download'),
@@ -198,11 +276,14 @@ class ModelManagerScreen extends ConsumerWidget {
                     if (isDownloaded)
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                           backgroundColor: Colors.redAccent.withOpacity(0.2),
-                           foregroundColor: Colors.redAccent,
-                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                           textStyle: const TextStyle(fontSize: 12),
-                           elevation: 0,
+                          backgroundColor: Colors.redAccent.withOpacity(0.2),
+                          foregroundColor: Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          textStyle: const TextStyle(fontSize: 12),
+                          elevation: 0,
                         ),
                         onPressed: () {
                           ref.read(chatProvider.notifier).deleteModel(model.id);
@@ -220,9 +301,18 @@ class ModelManagerScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 children: [
-                  LinearProgressIndicator(value: progress, color: const Color(0xFF6C63FF)),
+                  LinearProgressIndicator(
+                    value: progress,
+                    color: const Color(0xFF6C63FF),
+                  ),
                   const SizedBox(height: 8),
-                  Text('${(progress * 100).toStringAsFixed(1)}%', style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
+                  Text(
+                    '${(progress * 100).toStringAsFixed(1)}%',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -233,10 +323,14 @@ class ModelManagerScreen extends ConsumerWidget {
 
   Color _getWeightColor(String weight) {
     switch (weight) {
-      case 'Light': return Colors.greenAccent;
-      case 'Medium': return Colors.orangeAccent;
-      case 'High': return Colors.redAccent;
-      default: return Colors.blueAccent;
+      case 'Light':
+        return Colors.greenAccent;
+      case 'Medium':
+        return Colors.orangeAccent;
+      case 'High':
+        return Colors.redAccent;
+      default:
+        return Colors.blueAccent;
     }
   }
 }

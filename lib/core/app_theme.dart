@@ -27,10 +27,7 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         color: Colors.white,
       ),
-      bodyMedium: GoogleFonts.outfit(
-        fontSize: 16,
-        color: Colors.white70,
-      ),
+      bodyMedium: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
     ),
     colorScheme: const ColorScheme.dark().copyWith(
       primary: primaryColor,
@@ -41,9 +38,7 @@ class AppTheme {
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         textStyle: GoogleFonts.outfit(
           fontSize: 18,

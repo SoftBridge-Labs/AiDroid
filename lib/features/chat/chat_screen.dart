@@ -13,7 +13,6 @@ import '../home/model_manager_screen.dart';
 import '../text/prompt_lab_screen.dart';
 import '../vision/ask_image_screen.dart';
 
-
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
@@ -32,26 +31,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (pickedFile == null) return;
 
       final inputImage = InputImage.fromFilePath(pickedFile.path);
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-      
+      final textRecognizer = TextRecognizer(
+        script: TextRecognitionScript.latin,
+      );
+      final RecognizedText recognizedText = await textRecognizer.processImage(
+        inputImage,
+      );
+
       await textRecognizer.close();
 
       if (recognizedText.text.trim().isNotEmpty) {
         setState(() {
-          _controller.text = _controller.text + (_controller.text.isEmpty ? '' : '\n') + recognizedText.text;
+          _controller.text =
+              _controller.text +
+              (_controller.text.isEmpty ? '' : '\n') +
+              recognizedText.text;
         });
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No text found in image.')));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No text found in image.')),
+          );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error scanning text: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error scanning text: $e')));
     }
   }
 
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
-    final success = ref.read(chatProvider.notifier).sendMessage(_controller.text.trim());
+    final success = ref
+        .read(chatProvider.notifier)
+        .sendMessage(_controller.text.trim());
     if (success) {
       _controller.clear();
       Future.delayed(const Duration(milliseconds: 80), () {
@@ -64,8 +78,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       });
     } else {
-      if (ref.read(chatProvider).activeModelStatus == ModelStatus.ready && ref.read(chatProvider.notifier).isSessionLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Model engine is loading, please wait a moment...')));
+      if (ref.read(chatProvider).activeModelStatus == ModelStatus.ready &&
+          ref.read(chatProvider.notifier).isSessionLoading) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Model engine is loading, please wait a moment...'),
+          ),
+        );
       }
     }
   }
@@ -86,8 +105,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showSystemInstructionDialog() {
     final systemInstruction = ref.read(chatProvider).systemInstruction;
-    final TextEditingController instController = TextEditingController(text: systemInstruction);
-    
+    final TextEditingController instController = TextEditingController(
+      text: systemInstruction,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -116,20 +137,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.outfit(color: Colors.white70),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6C63FF),
               ),
               onPressed: () {
-                ref.read(chatProvider.notifier).setSystemInstruction(instController.text.trim());
+                ref
+                    .read(chatProvider.notifier)
+                    .setSystemInstruction(instController.text.trim());
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('System instruction updated')),
                 );
               },
-              child: Text('Save', style: GoogleFonts.outfit(color: Colors.white)),
+              child: Text(
+                'Save',
+                style: GoogleFonts.outfit(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -142,7 +171,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chatState = ref.watch(chatProvider);
     final messages = chatState.messages;
     final isReady = chatState.activeModelStatus == ModelStatus.ready;
-    final activeModel = chatState.models.firstWhere((m) => m.id == chatState.activeModelId, orElse: () => chatState.models.first);
+    final activeModel = chatState.models.firstWhere(
+      (m) => m.id == chatState.activeModelId,
+      orElse: () => chatState.models.first,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E14),
@@ -158,7 +190,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.android, size: 48, color: Color(0xFF6C63FF)),
+                    const Icon(
+                      Icons.android,
+                      size: 48,
+                      color: Color(0xFF6C63FF),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'AiDroid',
@@ -177,36 +213,89 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 padding: EdgeInsets.zero,
                 children: [
                   _buildDrawerSection('AI Features'),
-                  _buildDrawerItem(Icons.image_search, 'Vision Assistant', const Color(0xFF00C9FF), 
-                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AskImageScreen()))),
+                  _buildDrawerItem(
+                    Icons.image_search,
+                    'Vision Assistant',
+                    const Color(0xFF00C9FF),
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AskImageScreen()),
+                    ),
+                  ),
 
-                  _buildDrawerItem(Icons.science_outlined, 'Prompt Lab', const Color(0xFFFFB75E), 
-                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PromptLabScreen()))),
-                  _buildDrawerItem(Icons.mic_none_rounded, 'Audio Scribe', const Color(0xFFF093FB), 
-                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AudioScribeScreen()))),
-                  
+                  _buildDrawerItem(
+                    Icons.science_outlined,
+                    'Prompt Lab',
+                    const Color(0xFFFFB75E),
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PromptLabScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    Icons.mic_none_rounded,
+                    'Audio Scribe',
+                    const Color(0xFFF093FB),
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AudioScribeScreen(),
+                      ),
+                    ),
+                  ),
+
                   const Divider(color: Colors.white12, height: 32),
-                  
+
                   _buildDrawerSection('Settings'),
-                  _buildDrawerItem(Icons.psychology_outlined, 'System Instruction', Colors.amberAccent, _showSystemInstructionDialog),
+                  _buildDrawerItem(
+                    Icons.psychology_outlined,
+                    'System Instruction',
+                    Colors.amberAccent,
+                    _showSystemInstructionDialog,
+                  ),
 
                   const Divider(color: Colors.white12, height: 32),
 
                   _buildDrawerSection('Community'),
-                  _buildDrawerItem(Icons.favorite, 'Sponsor Project', Colors.pinkAccent, 
-                    () => _launchUrl('https://github.com/sponsors/PrakharDoneria')),
-                  _buildDrawerItem(Icons.star_outline_rounded, 'Star on GitHub', Colors.amberAccent, 
-                    () => _launchUrl('https://github.com/SoftBridge-Labs/AiDroid')),
-                  _buildDrawerItem(Icons.code_rounded, 'Source Code', Colors.greenAccent, 
-                    () => _launchUrl('https://github.com/SoftBridge-Labs/AiDroid')),
-                  _buildDrawerItem(Icons.info_outline, 'About', Colors.blueAccent, () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'AiDroid',
-                      applicationVersion: '1.0.0',
-                      applicationLegalese: '© SoftBridge Labs',
-                    );
-                  }),
+                  _buildDrawerItem(
+                    Icons.favorite,
+                    'Sponsor Project',
+                    Colors.pinkAccent,
+                    () => _launchUrl(
+                      'https://github.com/sponsors/PrakharDoneria',
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    Icons.star_outline_rounded,
+                    'Star on GitHub',
+                    Colors.amberAccent,
+                    () => _launchUrl(
+                      'https://github.com/SoftBridge-Labs/AiDroid',
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    Icons.code_rounded,
+                    'Source Code',
+                    Colors.greenAccent,
+                    () => _launchUrl(
+                      'https://github.com/SoftBridge-Labs/AiDroid',
+                    ),
+                  ),
+                  _buildDrawerItem(
+                    Icons.info_outline,
+                    'About',
+                    Colors.blueAccent,
+                    () {
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'AiDroid',
+                        applicationVersion: '1.0.0',
+                        applicationLegalese: '© SoftBridge Labs',
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -260,16 +349,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           const SizedBox(width: 4),
           // Live tok/s badge + stop button during generation
-          if (chatState.liveStats.isNotEmpty) ...[  
+          if (chatState.liveStats.isNotEmpty) ...[
             GestureDetector(
               onTap: () => ref.read(chatProvider.notifier).stopGeneration(),
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6C63FF).withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF6C63FF).withValues(alpha: 0.4), width: 0.8),
+                  border: Border.all(
+                    color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
+                    width: 0.8,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -279,7 +374,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       height: 8,
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF6C63FF),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -292,17 +389,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(Icons.stop_rounded, size: 12, color: Color(0xFF6C63FF)),
+                    const Icon(
+                      Icons.stop_rounded,
+                      size: 12,
+                      color: Color(0xFF6C63FF),
+                    ),
                   ],
                 ),
               ),
             ),
           ],
           IconButton(
-            icon: const Icon(Icons.tune_rounded, color: Colors.white54, size: 22),
+            icon: const Icon(
+              Icons.tune_rounded,
+              color: Colors.white54,
+              size: 22,
+            ),
             tooltip: 'Manage Models',
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ModelManagerScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ModelManagerScreen()),
+              );
             },
           ),
           const SizedBox(width: 4),
@@ -326,7 +434,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.bolt_rounded, size: 13, color: Colors.greenAccent),
+                  const Icon(
+                    Icons.bolt_rounded,
+                    size: 13,
+                    color: Colors.greenAccent,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     chatState.usageStats,
@@ -347,7 +459,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     itemCount: messages.length,
-                    itemBuilder: (context, index) => _buildMessageBubble(messages[index]),
+                    itemBuilder: (context, index) =>
+                        _buildMessageBubble(messages[index]),
                   ),
           ),
 
@@ -382,16 +495,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return FadeIn(
       duration: const Duration(milliseconds: 200),
       child: Align(
-        alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: message.isUser
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
         child: GestureDetector(
           onLongPress: () {
             Clipboard.setData(ClipboardData(text: message.text));
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message copied to clipboard'), duration: Duration(seconds: 1)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Message copied to clipboard'),
+                duration: Duration(seconds: 1),
+              ),
+            );
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.78,
+            ),
             decoration: BoxDecoration(
               color: message.isUser
                   ? const Color(0xFF6C63FF)
@@ -404,34 +526,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
             child: message.text.isEmpty
-                ? const SizedBox(
-                    width: 20,
-                    height: 14,
-                    child: _TypingDots(),
-                  )
+                ? const SizedBox(width: 20, height: 14, child: _TypingDots())
                 : message.isUser
-                    ? Text(
-                        message.text,
-                        style: GoogleFonts.outfit(
-                          fontSize: 15,
-                          height: 1.45,
-                          color: Colors.white,
-                        ),
-                      )
-                    : MarkdownBody(
-                        data: message.text,
-                        styleSheet: MarkdownStyleSheet(
-                          p: GoogleFonts.outfit(fontSize: 15, height: 1.5, color: Colors.white.withValues(alpha: 0.9)),
-                          code: GoogleFonts.sourceCodePro(fontSize: 13, color: Colors.cyanAccent, backgroundColor: Colors.black45),
-                          codeblockDecoration: BoxDecoration(color: const Color(0xFF0E0E14), borderRadius: BorderRadius.circular(8)),
-                          h1: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                          h2: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          h3: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 15),
-                          strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
-                          listBullet: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
-                        ),
+                ? Text(
+                    message.text,
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      height: 1.45,
+                      color: Colors.white,
+                    ),
+                  )
+                : MarkdownBody(
+                    data: message.text,
+                    styleSheet: MarkdownStyleSheet(
+                      p: GoogleFonts.outfit(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
+                      code: GoogleFonts.sourceCodePro(
+                        fontSize: 13,
+                        color: Colors.cyanAccent,
+                        backgroundColor: Colors.black45,
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: const Color(0xFF0E0E14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      h1: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                      h2: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      h3: GoogleFonts.outfit(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      strong: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      em: const TextStyle(
+                        color: Colors.white70,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      listBullet: GoogleFonts.outfit(
+                        color: Colors.white70,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ),
@@ -439,7 +589,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildStatusBanner(ChatState chatState) {
-    final isDownloading = chatState.activeModelStatus == ModelStatus.downloading;
+    final isDownloading =
+        chatState.activeModelStatus == ModelStatus.downloading;
     final isError = chatState.activeModelStatus == ModelStatus.error;
 
     return Container(
@@ -479,19 +630,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           if (isError) ...[
             const SizedBox(height: 6),
-            Text(chatState.errorMessage, style: GoogleFonts.outfit(color: Colors.redAccent, fontSize: 12)),
+            Text(
+              chatState.errorMessage,
+              style: GoogleFonts.outfit(color: Colors.redAccent, fontSize: 12),
+            ),
           ],
           if (!isDownloading) ...[
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: () => ref.read(chatProvider.notifier).downloadModel(chatState.activeModelId),
+              onPressed: () => ref
+                  .read(chatProvider.notifier)
+                  .downloadModel(chatState.activeModelId),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6C63FF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 elevation: 0,
-                textStyle: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
+                textStyle: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               child: const Text('Download Model'),
             ),
@@ -502,7 +663,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: LinearProgressIndicator(
                 value: chatState.activeDownloadProgress,
                 backgroundColor: Colors.white10,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF6C63FF),
+                ),
                 minHeight: 4,
               ),
             ),
@@ -527,7 +690,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
           decoration: BoxDecoration(
             color: const Color(0xFF13131C),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+            ),
           ),
           child: Row(
             children: [
@@ -541,20 +706,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: isReady ? 'Message...' : 'Download a model first',
-                    hintStyle: GoogleFonts.outfit(color: Colors.white24, fontSize: 15),
+                    hintStyle: GoogleFonts.outfit(
+                      color: Colors.white24,
+                      fontSize: 15,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(22),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.06),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
                     isDense: true,
-                    suffixIcon: isReady ? IconButton(
-                      icon: const Icon(Icons.document_scanner_outlined, color: Colors.white54),
-                      tooltip: 'Scan text from image',
-                      onPressed: _scanTextFromImage,
-                    ) : null,
+                    suffixIcon: isReady
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.document_scanner_outlined,
+                              color: Colors.white54,
+                            ),
+                            tooltip: 'Scan text from image',
+                            onPressed: _scanTextFromImage,
+                          )
+                        : null,
                   ),
                   onSubmitted: isReady ? (_) => _sendMessage() : null,
                 ),
@@ -563,8 +739,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               GestureDetector(
                 onTap: isReady
                     ? (chatState.liveStats.isNotEmpty
-                        ? () => ref.read(chatProvider.notifier).stopGeneration()
-                        : _sendMessage)
+                          ? () =>
+                                ref.read(chatProvider.notifier).stopGeneration()
+                          : _sendMessage)
                     : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -573,8 +750,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   decoration: BoxDecoration(
                     color: isReady
                         ? (chatState.liveStats.isNotEmpty
-                            ? Colors.redAccent.withValues(alpha: 0.85)
-                            : const Color(0xFF6C63FF))
+                              ? Colors.redAccent.withValues(alpha: 0.85)
+                              : const Color(0xFF6C63FF))
                         : Colors.white10,
                     shape: BoxShape.circle,
                   ),
@@ -607,6 +784,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ],
     );
   }
+
   Widget _buildDrawerSection(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
@@ -622,7 +800,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, Color color, VoidCallback onTap) {
+  Widget _buildDrawerItem(
+    IconData icon,
+    String title,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Icon(icon, color: color.withOpacity(0.8), size: 22),
       title: Text(
@@ -645,13 +828,17 @@ class _TypingDots extends StatefulWidget {
   State<_TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
   }
 
   @override
@@ -669,7 +856,8 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
             final offset = ((_ctrl.value * 3) - i).clamp(0.0, 1.0);
-            final opacity = (offset < 0.5 ? offset * 2 : (1.0 - offset) * 2).clamp(0.25, 1.0);
+            final opacity = (offset < 0.5 ? offset * 2 : (1.0 - offset) * 2)
+                .clamp(0.25, 1.0);
             return Container(
               margin: const EdgeInsets.only(right: 3),
               width: 5,

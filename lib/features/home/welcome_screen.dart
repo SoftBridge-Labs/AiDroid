@@ -27,24 +27,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Future<void> _checkDevice() async {
     final deviceInfo = DeviceInfoPlugin();
-    String perf = 'Running AI models locally requires a very powerful processor and plenty of RAM. Please be patient while generating responses.';
+    String perf =
+        'Running AI models locally requires a very powerful processor and plenty of RAM. Please be patient while generating responses.';
     String model = 'your device';
 
     try {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         model = '${androidInfo.manufacturer} ${androidInfo.model}';
-        
+
         // Basic heuristic: check if it's a known flagship string or standard device
         // Real memory requires MethodChannels, so we rely on device model strings typically
-        perf = 'Local AI inference is heavily dependent on hardware. High-end devices (Snapdragon 8+ series, massive RAM) will run TinyLlama decently fast (5-10 tokens/s). On mid-range devices like $model, please expect slower generation times and potential device heating. Keep the app open while generating.';
+        perf =
+            'Local AI inference is heavily dependent on hardware. High-end devices (Snapdragon 8+ series, massive RAM) will run TinyLlama decently fast (5-10 tokens/s). On mid-range devices like $model, please expect slower generation times and potential device heating. Keep the app open while generating.';
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         model = iosInfo.utsname.machine;
-        perf = 'Local AI requires newer A-series or M-series chips for good performance. On $model, expect slower generation on complex tasks.';
+        perf =
+            'Local AI requires newer A-series or M-series chips for good performance. On $model, expect slower generation on complex tasks.';
       } else if (Platform.isWindows) {
         model = 'Windows PC';
-        perf = 'On PCs, generation will heavily utilize your CPU since we are running LLaMA on GpuBackend.auto with CPU fallback. Expect decent speeds depending on your core count.';
+        perf =
+            'On PCs, generation will heavily utilize your CPU since we are running LLaMA on GpuBackend.auto with CPU fallback. Expect decent speeds depending on your core count.';
       }
     } catch (_) {}
 
@@ -61,7 +65,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_welcome', true);
     if (!mounted) return;
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const ChatScreen()),
+    );
   }
 
   @override
@@ -70,7 +77,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       backgroundColor: const Color(0xFF0E0E14),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+              )
             : Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
@@ -78,7 +87,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     FadeInDown(
-                      child: const Icon(Icons.science_outlined, size: 80, color: Color(0xFF6C63FF)),
+                      child: const Icon(
+                        Icons.science_outlined,
+                        size: 80,
+                        color: Color(0xFF6C63FF),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     FadeInDown(
@@ -86,7 +99,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       child: Text(
                         'Local AI Assistant',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -101,12 +118,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 32),
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orangeAccent,
+                              size: 32,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'AiDroid runs 100% locally. No data is sent to the cloud. Because you are compiling responses directly on $_deviceModel, here is what you need to know:\n\n$_performanceNote',
                               textAlign: TextAlign.justify,
-                              style: GoogleFonts.outfit(color: Colors.white70, fontSize: 16, height: 1.5),
+                              style: GoogleFonts.outfit(
+                                color: Colors.white70,
+                                fontSize: 16,
+                                height: 1.5,
+                              ),
                             ),
                           ],
                         ),
@@ -119,12 +144,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6C63FF),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         onPressed: _continue,
                         child: Text(
                           'I Understand, Let\'s Go',
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

@@ -16,11 +16,14 @@ class AskImageScreen extends StatefulWidget {
 class _AskImageScreenState extends State<AskImageScreen> {
   File? _image;
   final _picker = ImagePicker();
-  String _analysis = "Upload an image and provide a Gemini API Key to start analysis.";
+  String _analysis =
+      "Upload an image and provide a Gemini API Key to start analysis.";
   bool _isAnalyzing = false;
-  
+
   final TextEditingController _apiKeyController = TextEditingController();
-  final TextEditingController _promptController = TextEditingController(text: "Analyze this image in detail.");
+  final TextEditingController _promptController = TextEditingController(
+    text: "Analyze this image in detail.",
+  );
 
   @override
   void initState() {
@@ -59,7 +62,7 @@ class _AskImageScreenState extends State<AskImageScreen> {
       });
       return;
     }
-    
+
     final apiKey = _apiKeyController.text.trim();
     if (apiKey.isEmpty) {
       setState(() {
@@ -76,25 +79,19 @@ class _AskImageScreenState extends State<AskImageScreen> {
     _saveApiKey(apiKey);
 
     try {
-      final model = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: apiKey,
-      );
+      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
 
       final imageBytes = await _image!.readAsBytes();
-      final prompt = _promptController.text.trim().isEmpty 
-          ? "Analyze this image in detail." 
+      final prompt = _promptController.text.trim().isEmpty
+          ? "Analyze this image in detail."
           : _promptController.text.trim();
-          
+
       final content = [
-        Content.multi([
-          TextPart(prompt),
-          DataPart('image/jpeg', imageBytes),
-        ])
+        Content.multi([TextPart(prompt), DataPart('image/jpeg', imageBytes)]),
       ];
 
       final response = await model.generateContent(content);
-      
+
       setState(() {
         _isAnalyzing = false;
         _analysis = response.text ?? "No result generated.";
@@ -112,7 +109,13 @@ class _AskImageScreenState extends State<AskImageScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E14),
       appBar: AppBar(
-        title: Text('Ask Image', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Ask Image',
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: const Color(0xFF0E0E14),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -148,15 +151,27 @@ class _AskImageScreenState extends State<AskImageScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF00C9FF).withOpacity(0.5)),
+                  border: Border.all(
+                    color: const Color(0xFF00C9FF).withOpacity(0.5),
+                  ),
                 ),
                 child: _image == null
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.add_a_photo_outlined, size: 54, color: Color(0xFF00C9FF)),
+                          const Icon(
+                            Icons.add_a_photo_outlined,
+                            size: 54,
+                            color: Color(0xFF00C9FF),
+                          ),
                           const SizedBox(height: 16),
-                          Text('Tap to select image', style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70)),
+                          Text(
+                            'Tap to select image',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              color: Colors.white70,
+                            ),
+                          ),
                         ],
                       )
                     : ClipRRect(
@@ -191,15 +206,28 @@ class _AskImageScreenState extends State<AskImageScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00C9FF),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 onPressed: _isAnalyzing ? null : _analyzeImage,
-                icon: _isAnalyzing 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.auto_awesome, color: Colors.white),
+                icon: _isAnalyzing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
                 label: Text(
                   _isAnalyzing ? 'Analyzing...' : 'Analyze Image',
-                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -218,15 +246,28 @@ class _AskImageScreenState extends State<AskImageScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.lightbulb_outline, color: Colors.yellowAccent),
+                          const Icon(
+                            Icons.lightbulb_outline,
+                            color: Colors.yellowAccent,
+                          ),
                           const SizedBox(width: 8),
-                          Text('AI Insights', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text(
+                            'AI Insights',
+                            style: GoogleFonts.outfit(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       SelectableText(
                         _analysis,
-                        style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          color: Colors.white70,
+                        ),
                       ),
                     ],
                   ),
