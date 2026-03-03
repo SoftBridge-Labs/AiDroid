@@ -11,7 +11,7 @@ import '../../providers/chat_provider.dart';
 import '../audio/audio_scribe_screen.dart';
 import '../home/model_manager_screen.dart';
 import '../text/prompt_lab_screen.dart';
-import '../vision/ask_image_screen.dart';
+
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -213,15 +213,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 padding: EdgeInsets.zero,
                 children: [
                   _buildDrawerSection('AI Features'),
-                  _buildDrawerItem(
-                    Icons.image_search,
-                    'Vision Assistant',
-                    const Color(0xFF00C9FF),
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AskImageScreen()),
-                    ),
-                  ),
+
 
                   _buildDrawerItem(
                     Icons.science_outlined,

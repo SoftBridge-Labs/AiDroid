@@ -10,7 +10,6 @@ import 'package:background_downloader/background_downloader.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Android 13+ (API 33) requires runtime POST_NOTIFICATIONS permission
   await Permission.notification.request();
 
   FileDownloader().configureNotification(
